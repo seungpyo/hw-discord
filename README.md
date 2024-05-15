@@ -1,8 +1,12 @@
 # REST APIs
 
-> All `id` fields are UUIDs.
-> All APIs require token ID as Bearer token.
-> All JSON object notations follow TypeScript syntax.
+- All `id` fields are UUIDs.
+- All APIs require token ID as Bearer token.
+- All JSON object notations follow TypeScript syntax.
+- All resources listed below are stored in a database.
+- All resources have a unique `id` field.
+- All resources can be CRUDed by POST, GET, PUT, DELETE methods.
+  > e.g. POST /users, GET /users/:id, PUT /users/:id, DELETE /users/:id
 
 ## User
 
@@ -12,23 +16,10 @@ interface User {
   name: string;
   email: string;
   password: string;
-  avatarUrl: string;
+  avatarUrl: string; // URL to the user's avatar image
   rooms: string[];
 }
 ```
-
-## GET /users
-
-### Query Parameters
-
-#### Required
-
-- sfds
-
-#### Optional
-
-- `name` Filter by name.
-- `email` Filter by email.
 
 ## Room
 
@@ -53,6 +44,27 @@ interface Message {
 ```
 
 # Authentication
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    participant EMail
+    Client->>Server: POST /auth/signup
+    Server->>Client: 201 Created
+    Client->>Server: POST /auth/login
+    Server->>Client: 200 OK
+    Client->>Server: POST /auth/signout
+    Server->>Client: 200 OK
+    Client->>Server: POST /auth/forgot-password
+    Server->>EMail: Send email with challenge
+    EMail->>Client: Email sent (challenge)
+    Server->>Client: 200 OK
+    Client->>Server: POST /auth/reset-password
+    Server->>Client: 200 OK
+
+
+```
 
 ```typescript
 interface Token {
@@ -118,3 +130,68 @@ interface ResetPasswordRequest {
 ```
 
 Updates the password of the user with the given `email` and `challenge` to the given `password`.
+
+## Getting token on login and using it for other requests
+
+```typescript
+interface Token {
+  id: string;
+  userId: string;
+  expiresAt: string;
+}
+const token: Token = await fetch("auth/login", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    email: "chongjang@hanyang.ac.kr",
+    password: "1q2w3e4r!!",
+  }),
+});
+const fetchWithTokenRefresh = async (
+  url,
+  params: RequestInit,
+  { email: string, password: string }
+) => {
+  const res = await fetch(url, {
+    ...params,
+    headers: {
+      ...params.headers,
+      Authorization: `Bearer ${token.id}`,
+    },
+  });
+  if (res.status === 401) {
+    const token = await fetch("auth/signIn", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+    return fetchWithTokenRefresh(url, params, { email, password });
+  }
+  return res;
+};
+
+const res = await fetch("/users", {
+method: "GET",
+headers: {
+Authorization: `Bearer ${token.id}`,
+},
+})
+.then((res) => res.json())
+.catch((err) => {
+if err.status === 401 {
+// Unauthorized
+}
+}
+
+```
+
+```
+
+```
