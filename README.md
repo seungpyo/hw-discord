@@ -2,6 +2,7 @@
 
 - All `id` fields are UUIDs.
 - All APIs require token ID as Bearer token.
+  > API callers can read or write resources only if they have a valid token for it. (i.e. They can not read or write other users' resources.)
 - All JSON object notations follow TypeScript syntax.
 - All resources listed below are stored in a database.
 - All resources have a unique `id` field.
@@ -21,6 +22,23 @@ interface User {
 }
 ```
 
+### Ownership
+
+- token.userId === user.id
+
+### GET /users/:id
+
+Get a user by `id`.
+
+### GET /users
+
+Get all users, filtered by query parameters.
+Supports only equality filtering.
+
+### POST /users
+
+Create a new user.
+
 ## Room
 
 ```typescript
@@ -32,6 +50,31 @@ interface Room {
 }
 ```
 
+### Ownership
+
+- room.users.includes(token.userId)
+
+### GET /rooms/:id
+
+Get a room by `id`.
+
+### GET /rooms
+
+Get all rooms, filtered by query parameters.
+Supports only equality filtering.
+
+### POST /rooms
+
+Create a new room.
+
+### PUT /rooms/:id
+
+Update a room by `id`.
+
+### DELETE /rooms/:id
+
+Delete a room by `id`.
+
 ## Message
 
 ```typescript
@@ -42,6 +85,31 @@ interface Message {
   roomId: string;
 }
 ```
+
+### Ownership
+
+message.userId === token.userId
+
+### GET /messages/:id
+
+Get a message by `id`.
+
+### GET /messages
+
+Get all messages, filtered by query parameters.
+Supports only equality filtering.
+
+### POST /messages
+
+Create a new message.
+
+### PUT /messages/:id
+
+Update a message by `id`.
+
+### DELETE /messages/:id
+
+Delete a message by `id`.
 
 # Authentication
 
