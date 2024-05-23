@@ -1,0 +1,32 @@
+.user-list {
+  display: flex;
+  flex-direction: column;
+  background-color: #2f3136;
+  width: 250px;
+  height: 100%;
+  padding: 20px;
+  color: white;
+  font-family: 'Uni Sans', sans-serif;
+}
+
+.user-list h2 {
+  margin-bottom: 20px;
+}
+
+.user-list ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.user-list li {
+  margin: 10px 0;
+  padding: 10px;
+  color: grey;
+  cursor: pointer;
+}
+
+.user-list li:hover {
+  background-color: #40444b;
+  border-radius: 4px;
+  color: white;
+}

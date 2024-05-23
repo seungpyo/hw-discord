@@ -1,70 +1,265 @@
-# Getting Started with Create React App
+# REST APIs
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+- All `id` fields are UUIDs.
+- All APIs require token ID as Bearer token.
+  > API callers can read or write resources only if they have a valid token for it. (i.e. They can not read or write other users' resources.)
+- All JSON object notations follow TypeScript syntax.
+- All resources listed below are stored in a database.
+- All resources have a unique `id` field.
+- All resources can be CRUDed by POST, GET, PUT, DELETE methods.
+  > e.g. POST /users, GET /users/:id, PUT /users/:id, DELETE /users/:id
 
-## Available Scripts
+## User
 
-In the project directory, you can run:
+```typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  avatarUrl: string; // URL to the user's avatar image
+  rooms: string[];
+}
+```
 
-### `npm start`
+### Ownership
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- token.userId === user.id
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### GET /users/:id
 
-### `npm test`
+Get a user by `id`.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### GET /users
 
-### `npm run build`
+Get all users, filtered by query parameters.
+Supports only equality filtering.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### POST /users
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Create a new user.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Room
 
-### `npm run eject`
+```typescript
+interface Room {
+  id: string;
+  name: string;
+  users: string[];
+  messageIds: string[];
+}
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Ownership
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- room.users.includes(token.userId)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### GET /rooms/:id
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Get a room by `id`.
 
-## Learn More
+### GET /rooms
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Get all rooms, filtered by query parameters.
+Supports only equality filtering.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### POST /rooms
 
-### Code Splitting
+Create a new room.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### PUT /rooms/:id
 
-### Analyzing the Bundle Size
+Update a room by `id`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### DELETE /rooms/:id
 
-### Making a Progressive Web App
+Delete a room by `id`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Message
 
-### Advanced Configuration
+```typescript
+interface Message {
+  id: string;
+  content: string;
+  userId: string;
+  roomId: string;
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Ownership
 
-### Deployment
+message.userId === token.userId
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### GET /messages/:id
 
-### `npm run build` fails to minify
+Get a message by `id`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### GET /messages
+
+Get all messages, filtered by query parameters.
+Supports only equality filtering.
+
+### POST /messages
+
+Create a new message.
+
+### PUT /messages/:id
+
+Update a message by `id`.
+
+### DELETE /messages/:id
+
+Delete a message by `id`.
+
+# Authentication
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    participant EMail
+    Client->>Server: POST /auth/signup
+    Server->>Client: 201 Created
+    Client->>Server: POST /auth/login
+    Server->>Client: 200 OK
+    Client->>Server: POST /auth/signout
+    Server->>Client: 200 OK
+    Client->>Server: POST /auth/forgot-password
+    Server->>EMail: Send email with challenge
+    EMail->>Client: Email sent (challenge)
+    Server->>Client: 200 OK
+    Client->>Server: POST /auth/reset-password
+    Server->>Client: 200 OK
+
+
+```
+
+```typescript
+interface Token {
+  id: string;
+  userId: string;
+  expiresAt: string;
+}
+```
+
+```typescript
+interface EmailChallenge {
+  id: string;
+  email: string;
+  challenge: string;
+  expiresAt: string;
+}
+```
+
+# Authentication APIs
+
+Except `auth/signOut`, all `/auth/*` APIs does not require authentication token.
+
+## POST /auth/signup
+
+```typescript
+interface SignupRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+```
+
+Creates a new user with the given `name`, `email`, and `password`.
+
+### POST /auth/login
+
+```typescript
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+```
+
+Checks if the `email` and `password` are correct. If so, returns a newly created `Token`.
+
+### POST /auth/signout
+
+Checks if the token ID given as Bearer token is valid. If so, deletes the token to sign out the user.
+
+### POST /auth/forgot-password
+
+Sends an email to the given `email` with a challenge to reset the password.
+After email is sent, creates a new `EmailChallenge` with the given `email` and `challenge` in DB.
+
+### POST /auth/reset-password
+
+```typescript
+interface ResetPasswordRequest {
+  email: string;
+  challenge: string;
+  password: string;
+}
+```
+
+Updates the password of the user with the given `email` and `challenge` to the given `password`.
+
+## Getting token on login and using it for other requests
+
+```typescript
+interface Token {
+  id: string;
+  userId: string;
+  expiresAt: string;
+}
+const token: Token = await fetch("auth/login", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    email: "chongjang@hanyang.ac.kr",
+    password: "1q2w3e4r!!",
+  }),
+});
+const fetchWithTokenRefresh = async (
+  url,
+  params: RequestInit,
+  { email: string, password: string }
+) => {
+  const res = await fetch(url, {
+    ...params,
+    headers: {
+      ...params.headers,
+      Authorization: `Bearer ${token.id}`,
+    },
+  });
+  if (res.status === 401) {
+    const token = await fetch("auth/signIn", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+    return fetchWithTokenRefresh(url, params, { email, password });
+  }
+  return res;
+};
+
+const res = await fetch("/users", {
+method: "GET",
+headers: {
+Authorization: `Bearer ${token.id}`,
+},
+})
+.then((res) => res.json())
+.catch((err) => {
+if err.status === 401 {
+// Unauthorized
+}
+}
+
+```
+
+```
+
+```
