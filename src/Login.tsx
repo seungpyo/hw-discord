@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import "./Login.css";
+import { Token, User } from "./types";
 
-const Login = ({ onLogin }: { onLogin: (username: string) => void }) => {
+const Login = ({
+  onLogin,
+}: {
+  onLogin: ({ user, token }: { user: User; token: Token }) => void;
+}) => {
   const [isSignUp, setIsSignUp] = useState(false); // State to track if the user is in sign-up mode
   const [isForgotPassword, setIsForgotPassword] = useState(false); // State to track if the user is in forgot password mode
   const [username, setUsername] = useState(""); // State to store the username input
@@ -10,31 +15,42 @@ const Login = ({ onLogin }: { onLogin: (username: string) => void }) => {
   const [error, setError] = useState(""); // State to store error messages
   const [serverGreetings, setServerGreetings] = useState(""); // State to store server greetings
 
-  useEffect(() => {
-    fetch("http://localhost:3001/greetings").then((res) => {
-      if (res.ok) {
-        res.text().then((data) => setServerGreetings(data));
-      }
-    });
-  });
-
   // Handle login
-  const handleLogin = () => {
-    if (username === "testuser" && password === "password") {
-      onLogin(username); // Call onLogin prop function with username
-    } else {
-      setError("Incorrect username or password. Please try again.");
+  const handleLogin = async () => {
+    const res = await fetch("http://localhost:3001/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) {
+      setError("Invalid username or password");
+      return;
     }
+    const token: Token = await res.json();
+    const userRes = await fetch(
+      `http://localhost:3001/api/users/${token.userId}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token.id}` },
+      }
+    );
+    const user = await userRes.json();
+    onLogin({ user, token });
   };
 
   // Handle sign-up
-  const handleSignUp = () => {
-    // Placeholder for signup validation
-    if (username === "testuser") {
-      setError("Username is already taken. Please choose another.");
-    } else {
-      // Assume success for now
-      onLogin(username); // Call onLogin prop function with username
+  const handleSignUp = async () => {
+    console.log("Signing up...");
+    const res = await fetch("http://localhost:3001/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, email }),
+    });
+    if (!res.ok) {
+      console.log("Error signing up");
+      setError("Error signing up");
+      console.error(await res.text());
+      return;
     }
   };
 
@@ -85,13 +101,14 @@ const Login = ({ onLogin }: { onLogin: (username: string) => void }) => {
         />
       )}
       <button
-        onClick={
-          isSignUp
+        onClick={(e) => {
+          console.debug("개씨발");
+          (isSignUp
             ? handleSignUp
             : isForgotPassword
             ? handlePasswordRecovery
-            : handleLogin
-        }
+            : handleLogin)();
+        }}
       >
         {isSignUp ? "Sign Up" : isForgotPassword ? "Recover Password" : "Login"}
       </button>

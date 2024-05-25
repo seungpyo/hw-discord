@@ -5,20 +5,27 @@ import ChatList from "./ChatList";
 import ChatWindow from "./ChatWindow";
 import UserList from "./UserList";
 import CallScreen from "./CallScreen";
-import { UsersPerRoom, MessagesPerRoom } from "./types";
+import { UsersPerRoom, MessagesPerRoom, Token, User } from "./types";
+import { v4 as uuidv4 } from "uuid";
 const App = () => {
   const [username, setUsername] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoom] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessagesPerRoom>({});
   const [activeUsers, setActiveUsers] = useState<UsersPerRoom>({});
   const [showSignOut, setShowSignOut] = useState(false);
+  const [token, setToken] = useState<Token | null>(null);
   const isLoggedIn = username !== null;
   // Handle user login
-  const onLogin = (username: string) => setUsername(username);
+  // const onLogin = (username: string) => setUsername(username);
+  const onLogin = ({ user, token }: { user: User; token: Token }) => {
+    setUsername(user.name);
+    setToken(token);
+  };
 
   // Handle user sign-out
   const onSignOut = () => {
     setUsername(null);
+    setToken(null);
     setSelectedRoom(null);
     setMessages({});
     setActiveUsers({});
@@ -34,7 +41,9 @@ const App = () => {
       [room]: [
         ...(prevMessages[room] || []),
         {
-          username,
+          id: uuidv4(),
+          userId: token?.userId || "",
+          username: username || "",
           text,
           isOwn: true,
         },

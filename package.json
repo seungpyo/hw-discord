@@ -22,7 +22,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "serve": "tsc src/server.ts && node lib/server.js"
+    "serve": "npm run build && tsc server/*.ts && node server/server.js"
   },
   "eslintConfig": {
     "extends": [
