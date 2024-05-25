@@ -1,7 +1,7 @@
-import React from 'react';
-import './UserList.css';
+import React from "react";
+import "./UserList.css";
 
-function UserList({ username }) {
+const UserList = ({ username }: { username: string }) => {
   return (
     <div className="user-list">
       <h2>Users</h2>
@@ -11,6 +11,6 @@ function UserList({ username }) {
       </ul>
     </div>
   );
-}
+};
 
 export default UserList;
