@@ -1,3 +1,11 @@
+# Quick Start
+
+```bash
+npm i # Install dependencies, if you haven't already
+npm build # Build the static react app
+npm run serve # Start the server
+```
+
 # REST APIs
 
 - All `id` fields are UUIDs.

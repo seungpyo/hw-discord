@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Login.css";
 
 const Login = ({ onLogin }: { onLogin: (username: string) => void }) => {
@@ -8,6 +8,15 @@ const Login = ({ onLogin }: { onLogin: (username: string) => void }) => {
   const [password, setPassword] = useState(""); // State to store the password input
   const [email, setEmail] = useState(""); // State to store the email input
   const [error, setError] = useState(""); // State to store error messages
+  const [serverGreetings, setServerGreetings] = useState(""); // State to store server greetings
+
+  useEffect(() => {
+    fetch("http://localhost:3001/greetings").then((res) => {
+      if (res.ok) {
+        res.text().then((data) => setServerGreetings(data));
+      }
+    });
+  });
 
   // Handle login
   const handleLogin = () => {
@@ -38,6 +47,7 @@ const Login = ({ onLogin }: { onLogin: (username: string) => void }) => {
 
   return (
     <div className="login-container">
+      {serverGreetings}
       <h2>
         {isSignUp ? "Sign Up" : isForgotPassword ? "Forgot Password" : "Login"}
       </h2>
