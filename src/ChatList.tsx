@@ -1,18 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import './ChatList.css';
-import RoomModal from './RoomModal';
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect } from "react";
+import "./ChatList.css";
+import RoomModal from "./RoomModal";
+import { v4 as uuidv4 } from "uuid";
+import { ContextMenu, Room } from "./types";
 
-function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiateCall, setShowSignOut, showSignOut, handleSignOut }) {
-  const [rooms, setRooms] = useState([
-    { id: uuidv4(), name: 'General' },
-    { id: uuidv4(), name: 'Gaming' },
-    { id: uuidv4(), name: 'Coding' }
+export interface ChatListProps {
+  username: string;
+  selectedRoomId: string | null;
+  onSelectRoom: (roomId: string) => void;
+  onLeaveRoom: (roomId: string) => void;
+  onInitiateCall: (roomId: string) => void;
+  setShowSignOut: (show: boolean) => void;
+  showSignOut: boolean;
+  handleSignOut: () => void;
+}
+
+const ChatList = ({
+  username,
+  selectedRoomId: selectedRoom,
+  onSelectRoom,
+  onLeaveRoom,
+  onInitiateCall,
+  setShowSignOut,
+  showSignOut,
+  handleSignOut,
+}: ChatListProps) => {
+  const [rooms, setRooms] = useState<Room[]>([
+    { id: uuidv4(), name: "General" },
+    { id: uuidv4(), name: "Gaming" },
+    { id: uuidv4(), name: "Coding" },
   ]); // Initial list of rooms
   const [isRoomsCollapsed, setIsRoomsCollapsed] = useState(false); // State to track if the rooms list is collapsed
-  const [contextMenu, setContextMenu] = useState({ visible: false, roomId: null, x: 0, y: 0 }); // State for context menu
+  const [contextMenu, setContextMenu] = useState<ContextMenu>({
+    visible: false,
+    roomId: null,
+    x: 0,
+    y: 0,
+  }); // State for context menu
   const [isModalOpen, setIsModalOpen] = useState(false); // State for room modal
-  const [error, setError] = useState(''); // State for error messages
+  const [error, setError] = useState(""); // State for error messages
 
   // Show room modal if no rooms are available
   useEffect(() => {
@@ -23,15 +49,15 @@ function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiat
 
   // Handle clicking outside the context menu to close it
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = () => {
       if (contextMenu.visible) {
         setContextMenu({ visible: false, roomId: null, x: 0, y: 0 });
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
     return () => {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, [contextMenu]);
 
@@ -46,12 +72,15 @@ function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiat
   };
 
   // Select a room
-  const handleRoomSelect = (roomId) => {
+  const handleRoomSelect = (roomId: string) => {
     onSelectRoom(roomId);
   };
 
   // Handle right-click context menu for rooms
-  const handleContextMenu = (e, roomId) => {
+  const handleContextMenu = (
+    e: React.MouseEvent<HTMLLIElement, MouseEvent>,
+    roomId: string
+  ) => {
     e.preventDefault();
     setContextMenu({
       visible: true,
@@ -63,24 +92,31 @@ function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiat
 
   // Leave a room
   const handleLeaveRoom = () => {
-    const roomToLeave = rooms.find(room => room.id === contextMenu.roomId);
-    const confirmed = window.confirm(`Are you sure you want to leave the room "${roomToLeave.name}"?`);
+    const roomToLeave = rooms.find((room) => room.id === contextMenu.roomId);
+    const confirmed = window.confirm(
+      `Are you sure you want to leave the room "${roomToLeave?.name ?? ""}"?`
+    );
     if (confirmed) {
       setRooms(rooms.filter((room) => room.id !== contextMenu.roomId));
-      onLeaveRoom(contextMenu.roomId);
+      const roomId = contextMenu.roomId;
+      if (!roomId) return;
+      onLeaveRoom(roomId);
       setContextMenu({ visible: false, roomId: null, x: 0, y: 0 });
     }
   };
 
   // Initiate a call in a room
   const handleInitiateCall = () => {
-    onInitiateCall(contextMenu.roomId);
+    const roomId = contextMenu.roomId;
+    if (!roomId) return;
+    onInitiateCall(roomId);
     setContextMenu({ visible: false, roomId: null, x: 0, y: 0 });
   };
 
   // Show UUID of the room
   const handleShowUUID = () => {
-    const room = rooms.find(room => room.id === contextMenu.roomId);
+    const room = rooms.find((room) => room.id === contextMenu.roomId);
+    if (!room) return;
     alert(`Room ID: ${room.id}`);
     setContextMenu({ visible: false, roomId: null, x: 0, y: 0 });
   };
@@ -91,39 +127,46 @@ function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiat
   };
 
   // Create a new room
-  const handleCreateRoom = (roomName) => {
+  const handleCreateRoom = (roomName: string) => {
     const newRoom = { id: uuidv4(), name: roomName };
     setRooms([...rooms, newRoom]);
     onSelectRoom(newRoom.id);
     setIsModalOpen(false);
-    setError('');
+    setError("");
   };
 
   // Join an existing room
-  const handleJoinRoom = (roomId) => {
+  const handleJoinRoom = (roomId: string) => {
     if (!roomId) {
-      setError('Room ID is required to join a room.');
+      setError("Room ID is required to join a room.");
       return;
     }
     const newRoom = { id: roomId, name: `Room ${roomId}` };
     setRooms([...rooms, newRoom]);
     onSelectRoom(newRoom.id);
     setIsModalOpen(false);
-    setError('');
+    setError("");
   };
 
   // Close the room modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setError('');
+    setError("");
   };
 
   return (
     <div className="chat-list" onClick={handleCloseContextMenu}>
       <div className="chat-header" onClick={toggleRoomsCollapse}>
-        <span className="arrow">{isRoomsCollapsed ? '﹀' : '︿'}</span>
+        <span className="arrow">{isRoomsCollapsed ? "﹀" : "︿"}</span>
         <span>Rooms</span>
-        <button onClick={(e) => { e.stopPropagation(); handleAddRoom(); }}>+</button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddRoom();
+          }}
+        >
+          +
+        </button>
       </div>
       <div className="rooms-list">
         {!isRoomsCollapsed && (
@@ -131,7 +174,7 @@ function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiat
             {rooms.map((room) => (
               <li
                 key={room.id}
-                className={room.id === selectedRoom ? 'selected' : ''}
+                className={room.id === selectedRoom ? "selected" : ""}
                 onClick={() => handleRoomSelect(room.id)}
                 onContextMenu={(e) => handleContextMenu(e, room.id)}
               >
@@ -142,7 +185,14 @@ function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiat
         )}
       </div>
       <div className="user-info">
-        <span onClick={(e) => { e.preventDefault(); setShowSignOut(!showSignOut); }}>{username}</span>
+        <span
+          onClick={(e) => {
+            e.preventDefault();
+            setShowSignOut(!showSignOut);
+          }}
+        >
+          {username}
+        </span>
         {showSignOut && (
           <div className="sign-out" onClick={handleSignOut}>
             Sign Out
@@ -150,7 +200,10 @@ function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiat
         )}
       </div>
       {contextMenu.visible && (
-        <div className="context-menu" style={{ top: contextMenu.y, left: contextMenu.x }}>
+        <div
+          className="context-menu"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
           <div onClick={handleLeaveRoom}>Leave Room</div>
           <div onClick={handleInitiateCall}>Initiate Call</div>
           <div onClick={handleShowUUID}>Show Room ID</div>
@@ -165,6 +218,6 @@ function ChatList({ username, selectedRoom, onSelectRoom, onLeaveRoom, onInitiat
       />
     </div>
   );
-}
+};
 
 export default ChatList;
