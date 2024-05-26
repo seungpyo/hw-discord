@@ -1,10 +1,12 @@
 import { useState } from "react";
 import "./RoomModal.css";
+import { Room } from "./types";
+import { v4 } from "uuid";
 
 export interface RoomModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateRoom: (roomName: string) => void;
+  onCreateRoom: (room: Room) => void;
   onJoinRoom: (roomId: string) => void;
   error: string | null;
 }
@@ -22,8 +24,24 @@ function RoomModal({
   if (!isOpen) return null; // If modal is not open, return null to render nothing
 
   // Handle creating a room
-  const handleCreate = () => {
-    onCreateRoom(roomName); // Call onCreateRoom prop function with room name
+  const handleCreate = async () => {
+    const newRoom: Room = {
+      id: v4(),
+      name: roomName,
+    };
+    const res = await fetch("http://localhost:3001/rooms", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newRoom),
+    });
+    if (!res.ok) {
+      const data = await res.text();
+      console.error(data);
+      return;
+    }
+    onCreateRoom(newRoom); // Call onCreateRoom prop function with room name
     setRoomName(""); // Clear the input field
   };
 

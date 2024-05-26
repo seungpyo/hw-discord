@@ -30,7 +30,6 @@ const ChatList = ({
     { id: uuidv4(), name: "Gaming" },
     { id: uuidv4(), name: "Coding" },
   ]); // Initial list of rooms
-  const [isRoomsCollapsed, setIsRoomsCollapsed] = useState(false); // State to track if the rooms list is collapsed
   const [contextMenu, setContextMenu] = useState<ContextMenu>({
     visible: false,
     roomId: null,
@@ -64,11 +63,6 @@ const ChatList = ({
   // Open room modal to add a new room
   const handleAddRoom = () => {
     setIsModalOpen(true);
-  };
-
-  // Toggle rooms collapse state
-  const toggleRoomsCollapse = () => {
-    setIsRoomsCollapsed(!isRoomsCollapsed);
   };
 
   // Select a room
@@ -126,9 +120,7 @@ const ChatList = ({
     setContextMenu({ visible: false, roomId: null, x: 0, y: 0 });
   };
 
-  // Create a new room
-  const handleCreateRoom = (roomName: string) => {
-    const newRoom = { id: uuidv4(), name: roomName };
+  const onCreateRoom = (newRoom: Room) => {
     setRooms([...rooms, newRoom]);
     onSelectRoom(newRoom.id);
     setIsModalOpen(false);
@@ -156,8 +148,7 @@ const ChatList = ({
 
   return (
     <div className="chat-list" onClick={handleCloseContextMenu}>
-      <div className="chat-header" onClick={toggleRoomsCollapse}>
-        <span className="arrow">{isRoomsCollapsed ? "﹀" : "︿"}</span>
+      <div className="chat-header">
         <span>Rooms</span>
         <button
           onClick={(e) => {
@@ -169,20 +160,18 @@ const ChatList = ({
         </button>
       </div>
       <div className="rooms-list">
-        {!isRoomsCollapsed && (
-          <ul>
-            {rooms.map((room) => (
-              <li
-                key={room.id}
-                className={room.id === selectedRoom ? "selected" : ""}
-                onClick={() => handleRoomSelect(room.id)}
-                onContextMenu={(e) => handleContextMenu(e, room.id)}
-              >
-                {room.name}
-              </li>
-            ))}
-          </ul>
-        )}
+        <ul>
+          {rooms.map((room) => (
+            <li
+              key={room.id}
+              className={room.id === selectedRoom ? "selected" : ""}
+              onClick={() => handleRoomSelect(room.id)}
+              onContextMenu={(e) => handleContextMenu(e, room.id)}
+            >
+              {room.name}
+            </li>
+          ))}
+        </ul>
       </div>
       <div className="user-info">
         <span
@@ -212,7 +201,7 @@ const ChatList = ({
       <RoomModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onCreateRoom={handleCreateRoom}
+        onCreateRoom={onCreateRoom}
         onJoinRoom={handleJoinRoom}
         error={error}
       />

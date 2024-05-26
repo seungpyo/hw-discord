@@ -56,8 +56,7 @@ const Login = ({
     });
     if (!res.ok) {
       console.log("Error signing up");
-      setError("Error signing up");
-      console.error(await res.text());
+      setError("Error signing up: " + (await res.text()));
       return;
     }
   };
@@ -111,7 +110,10 @@ const Login = ({
       <button
         onClick={(e) => {
           (isSignUp
-            ? handleSignUp
+            ? async () => {
+                await handleSignUp();
+                setIsSignUp(false);
+              }
             : isForgotPassword
             ? handlePasswordRecovery
             : handleLogin)();
