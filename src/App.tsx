@@ -25,6 +25,10 @@ const App = () => {
     setShowSignOut(false); // Hide sign-out option on sign-out
   };
 
+  const getToken = (): Token | null => {
+    return token;
+  };
+
   const onRoomSelect = (roomId: string) => setSelectedRoom(roomId);
 
   // Handle sending a message
@@ -146,6 +150,7 @@ const App = () => {
             setShowSignOut={setShowSignOut}
             showSignOut={showSignOut}
             handleSignOut={onSignOut}
+            getToken={getToken}
           />
           <div className="main-content">
             {selectedRoomId && (

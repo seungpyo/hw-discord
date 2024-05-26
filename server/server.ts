@@ -104,6 +104,10 @@ app.get("/api/rooms/:id", (req: Request, res: Response) => {
 });
 
 app.post("/api/rooms", (req: Request, res: Response) => {
+  if (!res.locals.token) {
+    res.status(401).send("Unauthorized");
+    return;
+  }
   const db = loadDB();
   const room = req.body;
   db.rooms.push(room);

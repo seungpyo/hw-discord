@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./RoomModal.css";
-import { Room } from "./types";
+import { Room, Token } from "./types";
 import { v4 } from "uuid";
 
 export interface RoomModalProps {
@@ -9,6 +9,7 @@ export interface RoomModalProps {
   onCreateRoom: (room: Room) => void;
   onJoinRoom: (roomId: string) => void;
   error: string | null;
+  getToken: () => Token | null;
 }
 
 function RoomModal({
@@ -17,6 +18,7 @@ function RoomModal({
   onCreateRoom,
   onJoinRoom,
   error,
+  getToken,
 }: RoomModalProps) {
   const [roomName, setRoomName] = useState(""); // State to track the room name input
   const [roomId, setRoomId] = useState(""); // State to track the room ID input
@@ -25,14 +27,19 @@ function RoomModal({
 
   // Handle creating a room
   const handleCreate = async () => {
+    if (!roomName.trim()) {
+      alert("Room name cannot be empty. Aborting room creation.");
+      return;
+    }
     const newRoom: Room = {
       id: v4(),
       name: roomName,
     };
-    const res = await fetch("http://localhost:3001/rooms", {
+    const res = await fetch("http://localhost:3001/api/rooms", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()?.id}`,
       },
       body: JSON.stringify(newRoom),
     });

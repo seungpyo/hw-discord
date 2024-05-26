@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import "./ChatList.css";
 import RoomModal from "./RoomModal";
 import { v4 as uuidv4 } from "uuid";
-import { ContextMenu, Room } from "./types";
+import { ContextMenu, Room, Token } from "./types";
 
 export interface ChatListProps {
   username: string;
@@ -13,6 +13,7 @@ export interface ChatListProps {
   setShowSignOut: (show: boolean) => void;
   showSignOut: boolean;
   handleSignOut: () => void;
+  getToken: () => Token | null;
 }
 
 const ChatList = ({
@@ -24,12 +25,9 @@ const ChatList = ({
   setShowSignOut,
   showSignOut,
   handleSignOut,
+  getToken,
 }: ChatListProps) => {
-  const [rooms, setRooms] = useState<Room[]>([
-    { id: uuidv4(), name: "General" },
-    { id: uuidv4(), name: "Gaming" },
-    { id: uuidv4(), name: "Coding" },
-  ]); // Initial list of rooms
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenu>({
     visible: false,
     roomId: null,
@@ -41,9 +39,24 @@ const ChatList = ({
 
   // Show room modal if no rooms are available
   useEffect(() => {
-    if (rooms.length === 0) {
-      setIsModalOpen(true);
-    }
+    const listRooms = async () => {
+      const res = await fetch("http://localhost:3001/api/rooms", {
+        headers: {
+          Authorization: `Bearer ${getToken()?.id}`,
+        },
+      });
+      if (!res.ok) {
+        const data = await res.text();
+        console.error(data);
+        return;
+      }
+      const rooms = await res.json();
+      if (rooms.length === 0) {
+        setIsModalOpen(true);
+      }
+      setRooms(rooms);
+    };
+    listRooms();
   }, [rooms]);
 
   // Handle clicking outside the context menu to close it
@@ -140,7 +153,6 @@ const ChatList = ({
     setError("");
   };
 
-  // Close the room modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setError("");
@@ -204,6 +216,7 @@ const ChatList = ({
         onCreateRoom={onCreateRoom}
         onJoinRoom={handleJoinRoom}
         error={error}
+        getToken={getToken}
       />
     </div>
   );
