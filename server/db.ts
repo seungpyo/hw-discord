@@ -29,7 +29,7 @@ export interface DB {
 const dbPath = __dirname + "/db.json";
 
 // 데이터베이스를 로드하는 함수
-export function loadDB() {
+export function loadDB(): DB {
   if (!fs.existsSync(dbPath)) {
     // 파일이 존재하지 않으면 초기 데이터베이스 구조를 생성
     const initialDb = {

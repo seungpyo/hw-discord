@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./Login.css";
 import { Token, User } from "./types";
+import { v4 } from "uuid";
 
 const Login = ({
   onLogin,
@@ -15,7 +16,6 @@ const Login = ({
   const [error, setError] = useState(""); // State to store error messages
   const [serverGreetings, setServerGreetings] = useState(""); // State to store server greetings
 
-  // Handle login
   const handleLogin = async () => {
     const res = await fetch("http://localhost:3001/auth/login", {
       method: "POST",
@@ -40,11 +40,19 @@ const Login = ({
 
   // Handle sign-up
   const handleSignUp = async () => {
-    console.log("Signing up...");
+    const newUser: User = {
+      id: v4(),
+      name: username,
+      email,
+      password,
+      isMuted: false,
+      isVideoOn: false,
+      isSelf: false,
+    };
     const res = await fetch("http://localhost:3001/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, email }),
+      body: JSON.stringify(newUser),
     });
     if (!res.ok) {
       console.log("Error signing up");
@@ -102,7 +110,6 @@ const Login = ({
       )}
       <button
         onClick={(e) => {
-          console.debug("개씨발");
           (isSignUp
             ? handleSignUp
             : isForgotPassword

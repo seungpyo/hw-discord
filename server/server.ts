@@ -6,21 +6,16 @@ import { loadDB, saveDB } from "./db";
 const app = express();
 const port = 3001;
 
+app.use(express.json());
 app.use(express.static(path.join(__dirname, "../build")));
 app.use((req: Request, res: Response, next: any) => {
-  console.debug(
-    `${req.method} ${req.path} -> Authorization: ${req.headers["authorization"]}`
-  );
   const maybeTokenId = req.headers["authorization"];
   if (!maybeTokenId) {
     next();
     return;
   }
-  console.debug("Tlqkens");
   const tokenId = maybeTokenId.replace("Bearer ", "");
-  console.debug(`Token ID: ${tokenId}`);
   const db = loadDB();
-  console.debug(`db\n${JSON.stringify(db, null, 2)}`);
   const token = db.tokens.find((t) => t.id === tokenId);
   if (!token) {
     res.status(401).send("Unauthorized");
@@ -30,7 +25,6 @@ app.use((req: Request, res: Response, next: any) => {
     res.status(401).send("Token expired");
     return;
   }
-  console.debug(`Token: ${JSON.stringify(token, null, 2)}`);
   res.locals.token = token;
   next();
 });
@@ -50,19 +44,16 @@ app.get("/api/users/:id", (req: Request, res: Response) => {
   if (!user) {
     res.status(404).send("User not found");
   }
+  res.status(200).send(user);
 });
 
 app.post("/api/users", (req: Request, res: Response) => {
-  console.log("POST /api/users");
   const db = loadDB();
-  console.log(`req.body\n${JSON.stringify(req.body, null, 2)}`);
   const user: User = req.body;
-  console.log(`user: ${JSON.stringify(user, null, 2)}`);
   if (db.users.find((u) => u.id === user.id)) {
     res.status(409).send("User already exists");
     return;
   }
-  console.log(`db.users\n${JSON.stringify(db.users, null, 2)}`);
   db.users.push(user);
   saveDB(db);
   res.status(201).send(user);
@@ -137,9 +128,9 @@ app.put("/api/rooms/:id", (req: Request, res: Response) => {
 
 app.post("/auth/login", (req: Request, res: Response) => {
   const db = loadDB();
-  const { email, password } = req.body;
+  const { username, password } = req.body;
   const user = db.users.find(
-    (u) => u.email === email && u.password === password
+    (u) => u.name === username && u.password === password
   );
   if (!user) {
     res.status(401).send("Unauthorized");

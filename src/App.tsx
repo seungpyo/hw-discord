@@ -14,13 +14,6 @@ const App = () => {
   const [activeUsers, setActiveUsers] = useState<UsersPerRoom>({});
   const [showSignOut, setShowSignOut] = useState(false);
   const [token, setToken] = useState<Token | null>(null);
-  const isLoggedIn = username !== null;
-  // Handle user login
-  // const onLogin = (username: string) => setUsername(username);
-  const onLogin = ({ user, token }: { user: User; token: Token }) => {
-    setUsername(user.name);
-    setToken(token);
-  };
 
   // Handle user sign-out
   const onSignOut = () => {
@@ -133,8 +126,15 @@ const App = () => {
 
   return (
     <div className="App">
-      {!isLoggedIn ? (
-        <Login onLogin={onLogin} /> // Render the Login component if not logged in
+      {!username ? (
+        <Login
+          onLogin={({ user, token }: { user: User; token: Token }) => {
+            console.log("Calling onLogin");
+            setUsername(user.name);
+            setToken(token);
+            console.log("username", username);
+          }}
+        /> // Render the Login component if not logged in
       ) : (
         <div className="main-app">
           <ChatList
