@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import "./ChatList.css";
 import RoomModal from "./RoomModal";
 import { v4 as uuidv4 } from "uuid";
-import { ContextMenu, Room } from "./types";
+import { ContextMenu, Room, Token } from "./types";
 
 export interface ChatListProps {
   username: string;
@@ -13,6 +13,7 @@ export interface ChatListProps {
   setShowSignOut: (show: boolean) => void;
   showSignOut: boolean;
   handleSignOut: () => void;
+  getToken: () => Token | null;
 }
 
 const ChatList = ({
@@ -24,13 +25,9 @@ const ChatList = ({
   setShowSignOut,
   showSignOut,
   handleSignOut,
+  getToken,
 }: ChatListProps) => {
-  const [rooms, setRooms] = useState<Room[]>([
-    { id: uuidv4(), name: "General" },
-    { id: uuidv4(), name: "Gaming" },
-    { id: uuidv4(), name: "Coding" },
-  ]); // Initial list of rooms
-  const [isRoomsCollapsed, setIsRoomsCollapsed] = useState(false); // State to track if the rooms list is collapsed
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenu>({
     visible: false,
     roomId: null,
@@ -42,9 +39,24 @@ const ChatList = ({
 
   // Show room modal if no rooms are available
   useEffect(() => {
-    if (rooms.length === 0) {
-      setIsModalOpen(true);
-    }
+    const listRooms = async () => {
+      const res = await fetch("http://localhost:3001/api/rooms", {
+        headers: {
+          Authorization: `Bearer ${getToken()?.id}`,
+        },
+      });
+      if (!res.ok) {
+        const data = await res.text();
+        console.error(data);
+        return;
+      }
+      const rooms = await res.json();
+      if (rooms.length === 0) {
+        setIsModalOpen(true);
+      }
+      setRooms(rooms);
+    };
+    listRooms();
   }, [rooms]);
 
   // Handle clicking outside the context menu to close it
@@ -64,11 +76,6 @@ const ChatList = ({
   // Open room modal to add a new room
   const handleAddRoom = () => {
     setIsModalOpen(true);
-  };
-
-  // Toggle rooms collapse state
-  const toggleRoomsCollapse = () => {
-    setIsRoomsCollapsed(!isRoomsCollapsed);
   };
 
   // Select a room
@@ -126,9 +133,7 @@ const ChatList = ({
     setContextMenu({ visible: false, roomId: null, x: 0, y: 0 });
   };
 
-  // Create a new room
-  const handleCreateRoom = (roomName: string) => {
-    const newRoom = { id: uuidv4(), name: roomName };
+  const onCreateRoom = (newRoom: Room) => {
     setRooms([...rooms, newRoom]);
     onSelectRoom(newRoom.id);
     setIsModalOpen(false);
@@ -148,7 +153,6 @@ const ChatList = ({
     setError("");
   };
 
-  // Close the room modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setError("");
@@ -156,8 +160,7 @@ const ChatList = ({
 
   return (
     <div className="chat-list" onClick={handleCloseContextMenu}>
-      <div className="chat-header" onClick={toggleRoomsCollapse}>
-        <span className="arrow">{isRoomsCollapsed ? "﹀" : "︿"}</span>
+      <div className="chat-header">
         <span>Rooms</span>
         <button
           onClick={(e) => {
@@ -169,20 +172,18 @@ const ChatList = ({
         </button>
       </div>
       <div className="rooms-list">
-        {!isRoomsCollapsed && (
-          <ul>
-            {rooms.map((room) => (
-              <li
-                key={room.id}
-                className={room.id === selectedRoom ? "selected" : ""}
-                onClick={() => handleRoomSelect(room.id)}
-                onContextMenu={(e) => handleContextMenu(e, room.id)}
-              >
-                {room.name}
-              </li>
-            ))}
-          </ul>
-        )}
+        <ul>
+          {rooms.map((room) => (
+            <li
+              key={room.id}
+              className={room.id === selectedRoom ? "selected" : ""}
+              onClick={() => handleRoomSelect(room.id)}
+              onContextMenu={(e) => handleContextMenu(e, room.id)}
+            >
+              {room.name}
+            </li>
+          ))}
+        </ul>
       </div>
       <div className="user-info">
         <span
@@ -212,9 +213,10 @@ const ChatList = ({
       <RoomModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onCreateRoom={handleCreateRoom}
+        onCreateRoom={onCreateRoom}
         onJoinRoom={handleJoinRoom}
         error={error}
+        getToken={getToken}
       />
     </div>
   );

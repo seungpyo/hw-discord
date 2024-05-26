@@ -50,7 +50,11 @@ app.get("/api/users/:id", (req: Request, res: Response) => {
 app.post("/api/users", (req: Request, res: Response) => {
   const db = loadDB();
   const user: User = req.body;
-  if (db.users.find((u) => u.id === user.id)) {
+  if (
+    db.users.find(
+      (u) => u.id === user.id || u.name === user.name || u.email === user.email
+    )
+  ) {
     res.status(409).send("User already exists");
     return;
   }
@@ -100,6 +104,10 @@ app.get("/api/rooms/:id", (req: Request, res: Response) => {
 });
 
 app.post("/api/rooms", (req: Request, res: Response) => {
+  if (!res.locals.token) {
+    res.status(401).send("Unauthorized");
+    return;
+  }
   const db = loadDB();
   const room = req.body;
   db.rooms.push(room);

@@ -3,11 +3,11 @@ import "./Login.css";
 import { Token, User } from "./types";
 import { v4 } from "uuid";
 
-const Login = ({
-  onLogin,
-}: {
+export interface LoginScreenProps {
   onLogin: ({ user, token }: { user: User; token: Token }) => void;
-}) => {
+}
+
+const Login = ({ onLogin }: LoginScreenProps) => {
   const [isSignUp, setIsSignUp] = useState(false); // State to track if the user is in sign-up mode
   const [isForgotPassword, setIsForgotPassword] = useState(false); // State to track if the user is in forgot password mode
   const [username, setUsername] = useState(""); // State to store the username input
@@ -19,7 +19,9 @@ const Login = ({
   const handleLogin = async () => {
     const res = await fetch("http://localhost:3001/auth/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ username, password }),
     });
     if (!res.ok) {
@@ -56,8 +58,7 @@ const Login = ({
     });
     if (!res.ok) {
       console.log("Error signing up");
-      setError("Error signing up");
-      console.error(await res.text());
+      setError("Error signing up: " + (await res.text()));
       return;
     }
   };
@@ -111,7 +112,10 @@ const Login = ({
       <button
         onClick={(e) => {
           (isSignUp
-            ? handleSignUp
+            ? async () => {
+                await handleSignUp();
+                setIsSignUp(false);
+              }
             : isForgotPassword
             ? handlePasswordRecovery
             : handleLogin)();
