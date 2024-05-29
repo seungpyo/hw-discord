@@ -57,7 +57,7 @@ const ChatList = ({
       setRooms(rooms);
     };
     listRooms();
-  }, [rooms]);
+  }, [getToken, rooms]);
 
   // Handle clicking outside the context menu to close it
   useEffect(() => {
