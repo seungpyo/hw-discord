@@ -4,13 +4,17 @@ import { User } from "./types";
 import { useAppContext } from "./Context";
 
 const UserList = () => {
-  const { me, setMe } = useAppContext();
+  const { me, activeUsers, selectedRoomId } = useAppContext();
   return (
     <div className="user-list">
       <h2>Users</h2>
       <ul>
         <li>{me?.name} (You)</li>
-        {/* Other users can be listed here */}
+        {(activeUsers[selectedRoomId ?? ""] ?? [])
+          .filter((u: User) => u.id !== me?.id)
+          .map((u: User) => (
+            <li key={u.id}>{u.name}</li>
+          ))}
       </ul>
     </div>
   );

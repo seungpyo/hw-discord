@@ -2,10 +2,10 @@ import { useState } from "react";
 import "./RoomModal.css";
 import { Room, Token } from "./types";
 import { v4 } from "uuid";
+import { useAppContext } from "./Context";
 
 export interface RoomModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  onCloseModal: () => void;
   onCreateRoom: (room: Room) => void;
   onJoinRoom: (roomId: string) => void;
   error: string | null;
@@ -13,8 +13,7 @@ export interface RoomModalProps {
 }
 
 function RoomModal({
-  isOpen,
-  onClose,
+  onCloseModal,
   onCreateRoom,
   onJoinRoom,
   error,
@@ -22,8 +21,6 @@ function RoomModal({
 }: RoomModalProps) {
   const [roomName, setRoomName] = useState(""); // State to track the room name input
   const [roomId, setRoomId] = useState(""); // State to track the room ID input
-
-  if (!isOpen) return null; // If modal is not open, return null to render nothing
 
   // Handle creating a room
   const handleCreate = async () => {
@@ -84,7 +81,7 @@ function RoomModal({
           <button onClick={handleCreate}>Create Room</button>
           <button onClick={handleJoin}>Join Room</button>
         </div>
-        <button className="close-button" onClick={onClose}>
+        <button className="close-button" onClick={onCloseModal}>
           Close
         </button>{" "}
         {/* Button to close the modal */}

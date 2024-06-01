@@ -37,7 +37,6 @@ const ChatList = ({
   const [isModalOpen, setIsModalOpen] = useState(false); // State for room modal
   const [error, setError] = useState(""); // State for error messages
 
-  // Show room modal if no rooms are available
   useEffect(() => {
     const listRooms = async () => {
       const res = await fetch("http://localhost:3001/api/rooms", {
@@ -51,15 +50,11 @@ const ChatList = ({
         return;
       }
       const rooms = await res.json();
-      if (rooms.length === 0) {
-        setIsModalOpen(true);
-      }
       setRooms(rooms);
     };
     listRooms();
   }, [getToken, rooms]);
 
-  // Handle clicking outside the context menu to close it
   useEffect(() => {
     const handleClickOutside = () => {
       if (contextMenu.visible) {
@@ -141,19 +136,22 @@ const ChatList = ({
   };
 
   // Join an existing room
-  const handleJoinRoom = (roomId: string) => {
+  const onJoinRoom = async (roomId: string) => {
     if (!roomId) {
       setError("Room ID is required to join a room.");
       return;
     }
+
+    const res = await fetch(`http://localhost:3001/api/rooms/${roomId}`, {
+      headers: {
+        Authorization: `Bearer ${getToken()?.id}`,
+      },
+      method: "PUT",
+    });
+
     const newRoom = { id: roomId, name: `Room ${roomId}` };
     setRooms([...rooms, newRoom]);
     onSelectRoom(newRoom.id);
-    setIsModalOpen(false);
-    setError("");
-  };
-
-  const handleCloseModal = () => {
     setIsModalOpen(false);
     setError("");
   };
@@ -210,14 +208,18 @@ const ChatList = ({
           <div onClick={handleShowUUID}>Show Room ID</div>
         </div>
       )}
-      <RoomModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onCreateRoom={onCreateRoom}
-        onJoinRoom={handleJoinRoom}
-        error={error}
-        getToken={getToken}
-      />
+      {isModalOpen ? (
+        <RoomModal
+          onCloseModal={() => {
+            setIsModalOpen(false);
+            setError("");
+          }}
+          onCreateRoom={onCreateRoom}
+          onJoinRoom={onJoinRoom}
+          error={error}
+          getToken={getToken}
+        />
+      ) : null}
     </div>
   );
 };
