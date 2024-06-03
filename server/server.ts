@@ -1,12 +1,17 @@
 const express = require("express");
 import { Request, Response } from "express";
 const path = require("path");
-import { Token, User } from "../src/types";
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import bodyParser from 'body-parser';
+import { EmailChallenge, Token, User } from "../src/types";
 import { loadDB, saveDB } from "./db";
 const app = express();
 const port = 3001;
 
 app.use(express.json());
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "../build")));
 app.use((req: Request, res: Response, next: any) => {
   const maybeTokenId = req.headers["authorization"];
@@ -78,6 +83,53 @@ app.put("/api/users/:id", (req: Request, res: Response) => {
     ...db,
     users: db.users.map((u) => (u.id === user.id ? { ...u, ...req.body } : u)),
   });
+  res.status(200).send(user);
+});
+
+app.post('/api/forgot-password', (req: Request, res: Response) => {
+  const db = loadDB();
+  const user = db.users.find((u) => u.email === req.body);
+  if (!user) {
+    res.status(404).send({ message: 'Email does not exist' });
+    return;
+  }
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: 'email@gmail.com',
+      pass: 'email-password',
+    },
+  });
+
+  const challenge: EmailChallenge = {
+    id: user.id,
+    email: user.email,
+    challenge: crypto.randomBytes(32).toString('hex'),
+    expiresAt: '',
+  };
+  challenge.expiresAt = `http://localhost:3000/reset-password/${challenge.challenge}`;
+
+  transporter.sendMail({
+    to: challenge.email,
+    subject: 'Password Reset',
+    text: `To reset your password, click the following link: ${challenge.expiresAt}`,
+  });
+
+  res.status(200).send({ message: 'Password reset link sent to your email' });
+});
+
+app.post('/api/reset-password/:token', (req: Request, res: Response) => {
+  const db = loadDB();
+  const {username, password} = req.body;
+  const user = db.users.find((u) => u.name === username);
+  if (!user) {
+    return res.status(404).send({ message: 'Password reset failed' });
+  }
+
+  user.password = password;
+  db.users.push(user);
+  saveDB(db);
+
   res.status(200).send(user);
 });
 

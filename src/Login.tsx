@@ -15,6 +15,7 @@ const Login = ({ onLogin }: LoginScreenProps) => {
   const [email, setEmail] = useState(""); // State to store the email input
   const [error, setError] = useState(""); // State to store error messages
   const [serverGreetings, setServerGreetings] = useState(""); // State to store server greetings
+  const [isReset, setIsReset] = useState(false); // State to reset password
 
   const handleLogin = async () => {
     const res = await fetch("http://localhost:3001/auth/login", {
@@ -64,11 +65,30 @@ const Login = ({ onLogin }: LoginScreenProps) => {
   };
 
   // Handle password recovery
-  const handlePasswordRecovery = () => {
+  const handlePasswordRecovery = async () => {
+    const res = await fetch("http://localhost:3001/api/forgot-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email }),
+    });
     setError(
       "Password recovery email has been sent to your registered email address."
     );
+    setIsReset(true);
   };
+
+  // Handle password reset
+  const handlePasswordReset = async () => {
+    const res = await fetch("http://localhost:3001/api/reset-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ username, password }),
+    });
+  }
 
   return (
     <div className="login-container">
@@ -109,6 +129,14 @@ const Login = ({ onLogin }: LoginScreenProps) => {
           onChange={(e) => setEmail(e.target.value)}
         />
       )}
+      {isForgotPassword && isReset && (
+        <input
+          type="password"
+          placeholder="New password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      )}
       <button
         onClick={(e) => {
           (isSignUp
@@ -117,11 +145,11 @@ const Login = ({ onLogin }: LoginScreenProps) => {
                 setIsSignUp(false);
               }
             : isForgotPassword
-            ? handlePasswordRecovery
+            ? isReset ? handlePasswordReset : handlePasswordRecovery
             : handleLogin)();
         }}
       >
-        {isSignUp ? "Sign Up" : isForgotPassword ? "Recover Password" : "Login"}
+        {isSignUp ? "Sign Up" : isForgotPassword ? isReset ? "Reset password" : "Recover Password" : "Login"}
       </button>
       {!isSignUp && !isForgotPassword && (
         <>
@@ -136,6 +164,7 @@ const Login = ({ onLogin }: LoginScreenProps) => {
           onClick={() => {
             setIsSignUp(false);
             setIsForgotPassword(false);
+            setIsReset(false);
           }}
         >
           Back to Login
